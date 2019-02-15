@@ -1,0 +1,93 @@
+---
+title: "STAT590: Assignment 2"
+author: "Nick Graetz"
+date: "February 12, 2019"
+output: pdf_document
+---
+  
+```{r setup, echo=FALSE, message=FALSE, warning=FALSE}
+# Load knitr package and settings
+library(knitr)
+library(data.table)
+library(ggplot2)
+library(formatR)
+options(scipen=999)
+#opts_chunk$set(fig.align='center', tidy=TRUE, tidy.opts=list(blank=TRUE, width.cutoff=40), warning=FALSE,message=FALSE)
+#opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE)
+```
+
+\large
+1. 
+\linebreak
+
+If we knew the ordering of treatments within individuals, we could test whether there is any difference in the average treatment effect between those who received treatment first vs. those who received treatment second. If there was no interference, we would hopefully find no significant evidence of any difference between these two groups.  
+
+\small
+```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+## Set up some data and functions.
+set.seed(1234)
+setwd('C:/Users/ngraetz/Documents/repos/causal_inference')
+d <- fread('hw_2.csv')
+## Run rank sum test and calculate CI.
+ci <- wilcox.test(d$treatment,d$control,paired=TRUE,conf.int=TRUE)$conf.int
+m <- wilcox.test(d$treatment,d$control,paired=TRUE,alternative="less",conf.int=TRUE)$estimate
+message(paste0(round(m), ' (',round(ci[1]), ' - ', round(ci[2]), ')'))
+```
+
+\large
+Using a Wilcoxon rank sum test on paired differences, we find a significant effect of marijuana on reducing vomiting episodes by `r paste0(round(m), ' (',round(ci[1]), ' to ', round(ci[2]), ')')` compared to placebo treatment (p < 0.01).  
+
+\large
+2. 
+\linebreak
+
+\small
+```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+police <- data.table(Beat=c('Upper','Upper','Upper','Middle','Middle','Middle','Inner','Inner','Inner'),
+                     length=c(5,10,15,5,10,15,5,10,15),
+                     score=c(34.4,35.5,39.2,30.2,32.4,34.7,20.1,39.4,54.3))
+## Interaction plot (x=length,y=score,color=beat)
+ggplot() +
+  geom_line(data=police,
+            aes(x=length,
+                y=score,
+                color=Beat),
+            size=2) + 
+  labs(x='Length of Human Relations Course',
+       y='Attitude test score',
+       title='Interaction plot of Human Relations Course effect on attitude scores by officer beat assignment') + 
+  theme_minimal()
+```
+
+\large
+The length of a human relations course seems to have no effect on increasing attitudes among those police officers assigned to a upper- or middle-class beat. However, there seems to be an important interaction between the length of the course and attitudes among those police officers working an inner-city beat. If this group received the shortest course, they come away with lower attitudes than either of the other groups. If they received the longest course, they come away with the highest attitudes of any group. This indicates that longer course length is associated with higher attitudes only among those officers working an inner-city beat.  
+
+\large
+3. 
+\linebreak
+
+\small
+```{r, echo=TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+d <- as.data.table(expand.grid(c('8_hours','13_hours'), c('Old','New'), c('Low','High')))
+names(d) <- c('time','laser','airflow')
+d <- rbind(d,d)
+d[, y := c(.83,.18,.86,.30,.68,.25,.72,.10,.78,.16,.67,.23,.90,.20,.81,.14)]
+d[time=='8_hours', time_i := -1]
+d[time=='13_hours', time_i := 1]
+d[laser=='Old', laser_i := -1]
+d[laser=='New', laser_i := 1]
+d[airflow=='Low', airflow_i := -1]
+d[airflow=='High', airflow_i := 1]
+model1 <- lm(y ~ time_i * laser_i * airflow_i, data = d)
+summary(model1)
+kable(2*coef(model1)[-1])
+```
+
+\large
+We find a significant effect of longer firing time (13 hours compared to 8) on reducing probability of delamination by -0.59 (p < 0.01). We can be confident interpreting this main effect in isolation, as we don't find significant evidence of any interaction between firing time and laser or airflow. There is no evidence that laser or airflow significantly changes risks of delamination.  
+
+\large
+4. 
+\linebreak
+
+(Completed with Jordan Weiss) The proposed experiment will examine factors associated with the distance a paper airplane flies. Factor A will be whether light or heavy paper is used. Factor B will be whether the tail is folded up or down. Factor C will be whether or not a paperclip is used at the front of the paper airplane. The outcome will be the distance (e.g., feet) the paper plane flies.
